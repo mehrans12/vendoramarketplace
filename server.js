@@ -11,201 +11,210 @@ app.use(express.json());
 const PORT = process.env.PORT || 8080;
 const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || '';
 
-// Verified In-Stock Marketplace Catalog for Grounding
+// ============================================================
+// VERIFIED VENDORA MARKETPLACE CATALOG
+// Only these products exist in the website.
+// ============================================================
 const VENDORA_CATALOG = [
   {
     id: 'prod-1',
     name: 'Authentic Multani Hand-Painted Blue Pottery Vase',
     category: 'handicrafts',
-    price: 3450,
-    stock: 8,
+    keywords: ['pottery','vase','blue','multani','ceramic','clay','craft','handmade','artisan'],
+    price: 3450, stock: 8, rating: 4.9,
     vendor: 'Multani Blue Crafts',
-    rating: 4.9,
-    image: 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=400&q=80',
-    description: 'Handcrafted Multani blue pottery vase made with clay and traditional cobalt glaze.'
+    images: ['https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=400&q=80'],
+    description: 'Handcrafted Multani blue pottery vase with traditional cobalt glaze.'
   },
   {
     id: 'prod-2',
     name: 'Hand-Embroidered Sindhi Ajrak Shawl',
     category: 'fashion',
-    price: 2800,
-    stock: 15,
+    keywords: ['shawl','ajrak','sindhi','cotton','scarf','wrap','fabric','textile','embroidered','cloth'],
+    price: 2800, stock: 15, rating: 4.8,
     vendor: 'Sindh Heritage Crafts',
-    rating: 4.8,
-    image: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?auto=format&fit=crop&w=400&q=80',
-    description: 'Traditional block-printed Sindhi Ajrak natural dye shawl made from pure breathable cotton.'
+    images: ['https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?auto=format&fit=crop&w=400&q=80'],
+    description: 'Traditional block-printed Sindhi Ajrak natural dye shawl from pure breathable cotton.'
   },
   {
     id: 'prod-3',
     name: 'Premium Leather Peshawari Chappal',
     category: 'fashion',
-    price: 4200,
-    stock: 10,
+    keywords: ['chappal','peshawari','sandal','leather','footwear','shoe','slipper','kpk','pashtun'],
+    price: 4200, stock: 10, rating: 4.7,
     vendor: 'Khan Peshawari Shoe',
-    rating: 4.7,
-    image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=400&q=80',
-    description: 'Authentic double-stitched leather Peshawari chappal with durable tyre sole.'
+    images: ['https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=400&q=80'],
+    description: 'Double-stitched leather Peshawari chappal with durable tyre sole.'
   },
   {
     id: 'prod-4',
     name: 'Hand-Carved Chiniot Sheesham Wood Jewelry Box',
     category: 'handicrafts',
-    price: 3100,
-    stock: 6,
+    keywords: ['jewelry box','wood','wooden','carved','chiniot','sheesham','storage','craft','gift'],
+    price: 3100, stock: 6, rating: 4.9,
     vendor: 'Chiniot Wood Arts',
-    rating: 4.9,
-    image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=400&q=80',
-    description: 'Brass-inlaid wooden jewelry box hand-carved by Chiniot artisans with velvet interior lining.'
+    images: ['https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=400&q=80'],
+    description: 'Brass-inlaid wooden jewelry box hand-carved by Chiniot artisans.'
   },
   {
     id: 'prod-5',
     name: 'Pure Himalayan Organic Saffron (Zafran 5g)',
     category: 'spices',
-    price: 2500,
-    stock: 20,
+    keywords: ['saffron','zafran','spice','organic','himalayan','premium','cooking','ingredient'],
+    price: 2500, stock: 20, rating: 5.0,
     vendor: 'Northern Spice Co.',
-    rating: 5.0,
-    image: 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=400&q=80',
-    description: 'Grade-A pure organic saffron harvested from the valleys of Gilgit-Baltistan.'
+    images: ['https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=400&q=80'],
+    description: 'Grade-A organic saffron from Gilgit-Baltistan valleys.'
   },
   {
     id: 'prod-6',
     name: 'Traditional Kundan & Pearl Choker Set',
     category: 'jewelry',
-    price: 5800,
-    stock: 5,
+    keywords: ['kundan','choker','necklace','jewelry','pearl','gold','earring','set','bridal','wedding'],
+    price: 5800, stock: 5, rating: 4.8,
     vendor: 'Zeenat Jewelers',
-    rating: 4.8,
-    image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=400&q=80',
-    description: 'Handcrafted 22K gold-plated Kundan choker necklace set with matching earrings.'
+    images: ['https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=400&q=80'],
+    description: '22K gold-plated Kundan choker necklace set with matching earrings.'
   },
   {
     id: 'prod-7',
     name: 'Hand-Knotted Balochi Woolen Rug (4x6 ft)',
     category: 'home-decor',
-    price: 14500,
-    stock: 3,
+    keywords: ['rug','carpet','balochi','wool','handknotted','tribal','floor','mat','home','decor'],
+    price: 14500, stock: 3, rating: 4.9,
     vendor: 'Baloch Weavers Co.',
-    rating: 4.9,
-    image: 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?auto=format&fit=crop&w=400&q=80',
-    description: 'Authentic Balochi geometric tribal pattern rug hand-woven with 100% natural wool.'
+    images: ['https://images.unsplash.com/photo-1600121848594-d8644e57abab?auto=format&fit=crop&w=400&q=80'],
+    description: 'Balochi geometric tribal pattern rug hand-woven with 100% natural wool.'
   },
   {
     id: 'prod-8',
     name: 'Traditional Karahi & Biryani Gourmet Spice Blend',
     category: 'spices',
-    price: 1400,
-    stock: 25,
+    keywords: ['spice','masala','biryani','karahi','blend','cooking','food','seasoning','curry','garam'],
+    price: 1400, stock: 25, rating: 4.7,
     vendor: 'Karachi Spice Bazaar',
-    rating: 4.7,
-    image: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=400&q=80',
-    description: 'Gourmet freshly ground artisan spices for authentic Pakistani curries and biryani.'
+    images: ['https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=400&q=80'],
+    description: 'Freshly ground artisan spices for authentic Pakistani curries and biryani.'
   },
   {
     id: 'prod-9',
     name: 'Hand-Embroidered Pashmina Wool Stole',
     category: 'fashion',
-    price: 7200,
-    stock: 7,
+    keywords: ['pashmina','wool','stole','shawl','kashmir','embroidery','tilla','luxury','wrap','soft'],
+    price: 7200, stock: 7, rating: 4.9,
     vendor: 'Kashmir Handloom Guild',
-    rating: 4.9,
-    image: 'https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?auto=format&fit=crop&w=400&q=80',
-    description: 'Ultra-soft genuine Kashmiri wool shawl with intricate hand Tilla embroidery.'
+    images: ['https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?auto=format&fit=crop&w=400&q=80'],
+    description: 'Genuine Kashmiri pashmina wool shawl with hand Tilla embroidery.'
   },
   {
     id: 'prod-10',
     name: 'Himalayan Pink Rock Salt Crystal Lamp',
     category: 'home-decor',
-    price: 1850,
-    stock: 18,
+    keywords: ['salt lamp','himalayan','pink','crystal','lamp','home','decor','lighting','ionizer','khewra'],
+    price: 1850, stock: 18, rating: 4.8,
     vendor: 'Khewra Craft Works',
-    rating: 4.8,
-    image: 'https://images.unsplash.com/photo-1517991104123-1d56a6e81ed9?auto=format&fit=crop&w=400&q=80',
-    description: 'Natural ionizing rock salt lamp with wooden base and warm adjustable dimmer switch.'
+    images: ['https://images.unsplash.com/photo-1517991104123-1d56a6e81ed9?auto=format&fit=crop&w=400&q=80'],
+    description: 'Natural ionizing rock salt lamp with wooden base and dimmer switch.'
   },
   {
     id: 'prod-11',
     name: 'Handmade Velvet Zardozi Khussa Shoes',
     category: 'fashion',
-    price: 3600,
-    stock: 12,
+    keywords: ['khussa','zardozi','velvet','shoes','footwear','punjabi','wedding','traditional','embroidered'],
+    price: 3600, stock: 12, rating: 4.8,
     vendor: 'Lahore Heritage Footwear',
-    rating: 4.8,
-    image: 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&w=400&q=80',
-    description: 'Traditional wedding and festive velvet khussa embellished with gold thread work.'
+    images: ['https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&w=400&q=80'],
+    description: 'Festive velvet khussa with gold thread embroidery work.'
   },
   {
     id: 'prod-12',
     name: 'Handmade Clay Chai Matka Cups (Set of 6)',
     category: 'handicrafts',
-    price: 1200,
-    stock: 30,
+    keywords: ['chai','tea','cup','matka','clay','terracotta','earthen','pottery','karak','set'],
+    price: 1200, stock: 30, rating: 4.6,
     vendor: 'Sindh Clay Studios',
-    rating: 4.6,
-    image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=400&q=80',
-    description: 'Earthy unglazed terracotta tea cups for authentic Pakistani Karak chai experience.'
+    images: ['https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=400&q=80'],
+    description: 'Unglazed terracotta tea cups for authentic Pakistani Karak chai.'
   },
   {
     id: 'prod-13',
     name: 'Vendora Fast-Charge Braided Type-C Cable',
     category: 'electronics',
-    price: 850,
-    stock: 40,
+    keywords: ['cable','type-c','usb','charging','fast charge','braided','charger','data','tech'],
+    price: 850, stock: 40, rating: 4.7,
     vendor: 'TechVolt Pakistan',
-    rating: 4.7,
-    image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=400&q=80',
-    description: 'Durable nylon braided 65W fast charging cable with reinforced alloy connectors.'
+    images: ['https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=400&q=80'],
+    description: 'Nylon braided 65W fast charging Type-C cable with alloy connectors.'
   },
   {
     id: 'prod-14',
     name: 'Wireless Bluetooth Noise-Cancelling Earbuds',
     category: 'electronics',
-    price: 3950,
-    stock: 14,
+    keywords: ['earbuds','earphone','bluetooth','wireless','noise cancelling','audio','music','tws','headphone'],
+    price: 3950, stock: 14, rating: 4.6,
     vendor: 'TechVolt Pakistan',
-    rating: 4.6,
-    image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=400&q=80',
-    description: 'True wireless stereo earbuds with HD microphone and 28-hour total battery life.'
+    images: ['https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=400&q=80'],
+    description: 'True wireless earbuds with HD microphone and 28-hour battery life.'
   }
 ];
 
-// Helper to find matching products in catalog
-function searchCatalog(queryText) {
-  if (!queryText) return VENDORA_CATALOG.slice(0, 4);
-  const q = queryText.toLowerCase();
-  
-  const matches = VENDORA_CATALOG.filter(p => {
-    return p.name.toLowerCase().includes(q) ||
-      p.category.toLowerCase().includes(q) ||
-      p.description.toLowerCase().includes(q) ||
-      p.vendor.toLowerCase().includes(q) ||
-      (q.includes('pottery') && p.category === 'handicrafts') ||
-      (q.includes('vase') && p.id === 'prod-1') ||
-      (q.includes('ajrak') && p.id === 'prod-2') ||
-      (q.includes('shawl') && (p.id === 'prod-2' || p.id === 'prod-9')) ||
-      (q.includes('chappal') && p.id === 'prod-3') ||
-      (q.includes('shoe') && (p.id === 'prod-3' || p.id === 'prod-11')) ||
-      (q.includes('khussa') && p.id === 'prod-11') ||
-      (q.includes('jewelry') && (p.id === 'prod-4' || p.id === 'prod-6')) ||
-      (q.includes('box') && p.id === 'prod-4') ||
-      (q.includes('saffron') && p.id === 'prod-5') ||
-      (q.includes('spice') && (p.id === 'prod-5' || p.id === 'prod-8')) ||
-      (q.includes('masala') && p.id === 'prod-8') ||
-      (q.includes('kundan') && p.id === 'prod-6') ||
-      (q.includes('necklace') && p.id === 'prod-6') ||
-      (q.includes('rug') && p.id === 'prod-7') ||
-      (q.includes('carpet') && p.id === 'prod-7') ||
-      (q.includes('lamp') && p.id === 'prod-10') ||
-      (q.includes('salt') && p.id === 'prod-10') ||
-      (q.includes('tea') && p.id === 'prod-12') ||
-      (q.includes('cup') && p.id === 'prod-12') ||
-      (q.includes('cable') && p.id === 'prod-13') ||
-      (q.includes('charger') && p.id === 'prod-13') ||
-      (q.includes('earbud') && p.id === 'prod-14') ||
-      (q.includes('headphone') && p.id === 'prod-14');
+// Category alias map for natural language search
+const CATEGORY_ALIASES = {
+  'handicraft': 'handicrafts', 'craft': 'handicrafts', 'pottery': 'handicrafts', 'ceramic': 'handicrafts',
+  'fashion': 'fashion', 'clothing': 'fashion', 'clothes': 'fashion', 'dress': 'fashion', 'apparel': 'fashion',
+  'shoe': 'fashion', 'shoes': 'fashion', 'footwear': 'fashion', 'sandal': 'fashion',
+  'spice': 'spices', 'spices': 'spices', 'masala': 'spices', 'food': 'spices', 'ingredient': 'spices',
+  'jewelry': 'jewelry', 'jewellery': 'jewelry', 'necklace': 'jewelry', 'ring': 'jewelry', 'earring': 'jewelry',
+  'home': 'home-decor', 'decor': 'home-decor', 'decoration': 'home-decor', 'rug': 'home-decor', 'carpet': 'home-decor', 'lamp': 'home-decor',
+  'electronic': 'electronics', 'electronics': 'electronics', 'tech': 'electronics', 'gadget': 'electronics',
+  'cable': 'electronics', 'charger': 'electronics', 'earphone': 'electronics', 'earbud': 'electronics'
+};
+
+/**
+ * Smart keyword search across the Vendora catalog.
+ * Returns matched products sorted by relevance score.
+ */
+function searchCatalog(query, clientCatalog) {
+  const catalog = (clientCatalog && clientCatalog.length > 0) ? clientCatalog : VENDORA_CATALOG;
+  if (!query || query.trim().length < 2) return catalog.slice(0, 4);
+
+  const q = query.toLowerCase().trim();
+  const words = q.split(/\s+/).filter(w => w.length > 1);
+
+  const scored = catalog.map(p => {
+    let score = 0;
+    const pName = (p.name || p.title || '').toLowerCase();
+    const pCat = (p.category || '').toLowerCase();
+    const pDesc = (p.description || '').toLowerCase();
+    const pKw = (p.keywords || []).join(' ').toLowerCase();
+
+    for (const word of words) {
+      // Direct name match = highest weight
+      if (pName.includes(word)) score += 10;
+      // Keyword match
+      if (pKw.includes(word)) score += 8;
+      // Description match
+      if (pDesc.includes(word)) score += 4;
+      // Category match
+      if (pCat.includes(word)) score += 6;
+      // Category alias match
+      if (CATEGORY_ALIASES[word] && CATEGORY_ALIASES[word] === pCat) score += 7;
+    }
+    return { product: p, score };
   });
 
-  return matches.length > 0 ? matches : VENDORA_CATALOG.slice(0, 4);
+  const matches = scored.filter(x => x.score > 0).sort((a, b) => b.score - a.score);
+  return matches.map(x => x.product);
+}
+
+/**
+ * Build a plain-text description of a product for the AI to describe.
+ * AI cannot pick products — only describe the ones we pre-select.
+ */
+function buildProductContext(products) {
+  return products.map(p =>
+    `• [${p.name || p.title}](/product/${p.id}) - Rs. ${(p.price || 0).toLocaleString()} | Category: ${p.category} | Vendor: ${p.vendorName || p.vendor} | Stock: ${p.stock} in stock`
+  ).join('\n');
 }
 
 // 1. Health check
@@ -213,7 +222,7 @@ app.get('/health', (req, res) => {
   res.json({ status: 'healthy', uptime: process.uptime() });
 });
 
-// 2. Grounded AI Shopping Assistant Endpoint
+// 2. AI Shopping Assistant — Product-First Architecture
 app.post('/api/ai/chat', async (req, res) => {
   try {
     const { messages, catalog: clientCatalog, mode, language = 'en' } = req.body || {};
@@ -221,111 +230,97 @@ app.post('/api/ai/chat', async (req, res) => {
       return res.status(400).json({ error: "Invalid request: 'messages' array is required." });
     }
 
-    // Use active website catalog if passed from client, merged with default catalog
-    const activeCatalog = (clientCatalog && Array.isArray(clientCatalog) && clientCatalog.length > 0)
-      ? clientCatalog
-      : VENDORA_CATALOG;
+    const lastUserMsg = (messages[messages.length - 1]?.content || '').trim();
 
-    const lastUserMsg = (messages[messages.length - 1]?.content || "").trim();
-    const queryLower = lastUserMsg.toLowerCase();
+    // ── STEP 1: Match products from catalog using code, not AI ──
+    const matchedProducts = searchCatalog(lastUserMsg, clientCatalog);
+    const hasMatches = matchedProducts.length > 0;
 
-    // Find direct catalog matches
-    const directMatches = activeCatalog.filter(p => {
-      const pName = (p.name || p.title || '').toLowerCase();
-      const pCat = (p.category || '').toLowerCase();
-      const pDesc = (p.description || '').toLowerCase();
-      const words = queryLower.split(/\s+/).filter(w => w.length > 2);
-      return words.some(w => pName.includes(w) || pCat.includes(w) || pDesc.includes(w));
-    });
+    // ── STEP 2: Build the system prompt AFTER products are selected ──
+    // The AI is only told about matching products, so it cannot mention anything outside.
+    let systemPrompt;
 
-    // Build grounded catalog prompt
-    const catalogPrompt = `
-YOU ARE VENDORA'S OFFICIAL AI SHOPPING ASSISTANT FOR VENDORA MARKETPLACE IN PAKISTAN.
+    if (hasMatches) {
+      const productList = buildProductContext(matchedProducts.slice(0, 5));
+      systemPrompt = `You are Vendora's shopping assistant. A user asked: "${lastUserMsg}".
 
-LIST OF ALL AVAILABLE PRODUCTS ON VENDORA:
-${activeCatalog.map(p => `• ID: "${p.id}" | Name: "${p.name || p.title}" | Category: "${p.category}" | Price: Rs. ${(p.price || 0).toLocaleString()} | Stock: ${p.stock || 10} | Link: [${p.name || p.title}](/product/${p.id})`).join('\n')}
+The following products from Vendora's catalog match the user's request. YOU MUST ONLY MENTION THESE PRODUCTS. DO NOT suggest, mention, or invent any other products:
 
-STRICT DIRECTIVES (FAILURE TO FOLLOW IS A CRITICAL ERROR):
-1. YOU MUST NEVER RECOMMEND, MENTION, OR INVENT ANY PRODUCT THAT IS NOT IN THE LIST ABOVE.
-2. If the user asks for ANY item that is not in the list above (for example: smartwatch, headphone, phone, laptop, television, external brands, etc.):
-   - YOU MUST EXPLICITLY TELL THE USER: "We currently do not have [item] available on Vendora."
-   - DO NOT make up fake specs, external stores, or non-existent items.
-   - Then suggest 2-3 genuine items from the Vendora product list above that they might like instead.
-3. When recommending any product from the list, ALWAYS provide its exact markdown link in the format [Product Name](/product/prod-id) and price in Rs.
-4. Support English, Urdu (اردو), Sindhi (سنڌي), and Roman Urdu/Sindhi automatically based on user language.
-5. Delivery across Pakistan takes 3-5 business days with Cash on Delivery (COD) and 7-day hassle-free return guarantee.
-`;
+${productList}
 
-    const langHint = `Target reply language: ${language === 'ur' ? 'Urdu' : language === 'sd' ? 'Sindhi' : 'English'}. If the user writes in Roman Urdu/Sindhi, reply in that language style.`;
+Write a helpful, friendly 2-3 sentence response describing these products and invite the user to click a link to view details. Format each product as a markdown link exactly as shown above. Reply in ${language === 'ur' ? 'Urdu' : language === 'sd' ? 'Sindhi' : 'English'}.`;
+    } else {
+      // No product match — tell AI to apologize and show popular items instead
+      const popularProducts = buildProductContext(VENDORA_CATALOG.slice(0, 4));
+      systemPrompt = `You are Vendora's shopping assistant. A user asked: "${lastUserMsg}".
 
-    const formattedMessages = [
-      { role: 'system', content: catalogPrompt },
-      { role: 'system', content: langHint },
-      ...messages.slice(-6)
-    ];
+Vendora does not carry the item the user asked for. Tell the user politely that this item is not available on Vendora.
 
-    let replyContent = "";
-    let returnedProducts = [];
+Then suggest these popular Vendora products instead (ONLY MENTION THESE, NO OTHER PRODUCTS):
+${popularProducts}
+
+Keep your response under 3 sentences. Format each as a markdown link. Reply in ${language === 'ur' ? 'Urdu' : language === 'sd' ? 'Sindhi' : 'English'}.`;
+    }
+
+    // ── STEP 3: Call Gemini for conversational language only ──
+    let replyContent = '';
 
     if (GEMINI_KEY) {
       try {
-        const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${GEMINI_KEY}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: "gemini-3.6-flash",
-            messages: formattedMessages,
-            temperature: 0.1,
-            max_tokens: 600
-          })
-        });
+        const geminiRes = await fetch(
+          'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${GEMINI_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              model: 'gemini-3.6-flash',
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: lastUserMsg }
+              ],
+              temperature: 0.0,
+              max_tokens: 400
+            })
+          }
+        );
 
-        if (response.ok) {
-          const data = await response.json();
-          replyContent = data.choices?.[0]?.message?.content || "";
+        if (geminiRes.ok) {
+          const data = await geminiRes.json();
+          replyContent = data.choices?.[0]?.message?.content || '';
         } else {
-          const errText = await response.text();
-          console.warn("Gemini API call warning:", response.status, errText);
+          const errText = await geminiRes.text();
+          console.warn('Gemini API warning:', geminiRes.status, errText);
         }
-      } catch (geminiErr) {
-        console.warn("Gemini fetch error:", geminiErr.message);
+      } catch (err) {
+        console.warn('Gemini fetch error:', err.message);
       }
     }
 
-    // Determine relevant products for UI cards
-    if (replyContent) {
-      returnedProducts = activeCatalog.filter(p => {
-        const pId = p.id || p.productId;
-        const pName = (p.name || p.title || '').toLowerCase();
-        return replyContent.includes(pId) || replyContent.toLowerCase().includes(pName);
-      });
-      if (returnedProducts.length === 0 && directMatches.length > 0) {
-        returnedProducts = directMatches.slice(0, 3);
-      }
-    } else {
-      if (directMatches.length > 0) {
-        const listStr = directMatches
-          .slice(0, 3)
-          .map(p => `* [**${p.name || p.title}**](/product/${p.id}) - **Rs. ${(p.price || 0).toLocaleString()}**`)
+    // ── STEP 4: If Gemini failed, generate response deterministically ──
+    if (!replyContent) {
+      if (hasMatches) {
+        const listStr = matchedProducts
+          .slice(0, 4)
+          .map(p => `* [**${p.name || p.title}**](/product/${p.id}) — Rs. ${(p.price || 0).toLocaleString()}`)
           .join('\n');
-        replyContent = `Here are available items matching your search on Vendora:\n\n${listStr}\n\nClick on any product above to view full details! 🛍️`;
-        returnedProducts = directMatches.slice(0, 3);
+        replyContent = `Here are available products matching your search on Vendora:\n\n${listStr}\n\nClick any item above to view full details and order! 🛍️`;
       } else {
-        replyContent = `Welcome to Vendora! We specialize in authentic Pakistani handicrafts, traditional fashion, jewelry, home decor, and spices. How can I help you today? 🛍️`;
+        replyContent = `We currently don't carry that item on Vendora. Browse our popular categories: [Handicrafts](/category/handicrafts), [Fashion](/category/fashion), [Spices](/category/spices), and [Jewelry](/category/jewelry). How else can I help? 🛍️`;
       }
     }
 
-    // Format returned products for frontend cards
-    const formattedProducts = returnedProducts.map(p => ({
+    // ── STEP 5: Return matched products for UI cards ──
+    const displayProducts = hasMatches ? matchedProducts.slice(0, 4) : VENDORA_CATALOG.slice(0, 4);
+    const formattedProducts = displayProducts.map(p => ({
       id: p.id || p.productId,
       name: p.name || p.title,
       price: p.price,
-      images: p.images || [p.image || 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=400&q=80'],
+      images: p.images || [p.image || ''],
       rating: p.rating || 4.8,
-      reviews: 15,
+      reviews: p.reviewsCount || 15,
       vendor: p.vendorName || p.vendor || 'Artisan Merchant',
       stock: p.stock || 10
     }));
@@ -337,23 +332,23 @@ STRICT DIRECTIVES (FAILURE TO FOLLOW IS A CRITICAL ERROR):
     });
 
   } catch (err) {
-    console.error("AI Chat handler error:", err);
+    console.error('AI Chat handler error:', err);
     return res.json({
-      content: "I am ready to help you discover authentic items across Vendora. What products are you looking for today? 🛍️",
+      content: 'Welcome to Vendora! We carry authentic Pakistani handicrafts, fashion, spices, and home decor. What are you looking for today? 🛍️',
       mode: 'product_discovery',
       products: []
     });
   }
 });
 
-// 3. Serve static assets from dist
+// 3. Serve static frontend
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// 4. Fallback to index.html for SPA client-side routing
+// 4. SPA fallback
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Vendora Frontend & Grounded AI API serving on http://0.0.0.0:${PORT}`);
+  console.log(`🚀 Vendora server running on http://0.0.0.0:${PORT}`);
 });
