@@ -6,11 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "start": "node server.js",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview --host 0.0.0.0 --allowed-hosts all"
   },
   "dependencies": {
     "browser-image-compression": "^2.0.2",
+    "express": "^4.22.2",
     "firebase": "^12.16.0",
     "lucide-react": "^1.25.0",
     "react": "^19.2.7",
