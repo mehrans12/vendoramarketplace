@@ -1,0 +1,284 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper: Check if user is signed in
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Helper: Check if user document belongs to current user
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // Helper: Fetch current user's role from user document
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    // Helper: Check if user has admin role
+    function isAdmin() {
+      return isSignedIn() && (
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserRole() == 'admin') ||
+        request.auth.token.email.toLowerCase() == 'iphoneuser0312@gmail.com'
+      );
+    }
+    
+    // Helper: Check if user is a verified vendor
+    function isVerifiedVendor() {
+      return isSignedIn() && 
+        exists(/databases/$(database)/documents/vendors/$(request.auth.uid)) && 
+        get(/databases/$(database)/documents/vendors/$(request.auth.uid)).data.verified == true;
+    }
+
+    // Rules for 'users' collection
+    match /users/{userId} {
+      allow read: if true; // Public profiles are readable
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isAdmin() || (isOwner(userId) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])));
+      allow delete: if isAdmin();
+
+      // Rules for 'notifications' subcollection
+      match /notifications/{notificationId} {
+        allow read, update: if isOwner(userId);
+        allow create: if isSignedIn(); // Users can trigger notifications for other users
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    // Rules for 'vendors' collection
+    match /vendors/{vendorId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.auth.uid == vendorId;
+      allow update: if isOwner(vendorId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Rules for 'products' collection
+    match /products/{productId} {
+      allow read: if true;
+      // Only verified vendors can create products, and only they can edit their own products
+      allow create: if isVerifiedVendor() && request.resource.data.vendorId == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.vendorId == request.auth.uid || isAdmin());
+      allow delete: if isSignedIn() && (resource.data.vendorId == request.auth.uid || isAdmin());
+    }
+
+    // Rules for 'orders' collection
+    match /orders/{orderId} {
+      // Buyers, Vendors, and Admins can read orders they are involved in
+      allow read: if isSignedIn() && (
+        resource.data.buyerId == request.auth.uid || 
+        resource.data.vendorId == request.auth.uid || 
+        isAdmin()
+      );
+      // Authenticated users can create orders (further validation happens in Cloud Functions ideally)
+      allow create: if isSignedIn() && request.resource.data.buyerId == request.auth.uid;
+      // Updates allowed by buyer, vendor, or admin participating in order, but buyers/vendors cannot change critical fields like totalAmount
+      allow update: if isAdmin() || (
+        isSignedIn() && (
+          (resource.data.buyerId == request.auth.uid && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['totalAmount', 'items', 'vendorId', 'buyerId'])) ||
+          (resource.data.vendorId == request.auth.uid && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['totalAmount', 'items', 'buyerId', 'vendorId']))
+        )
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Rules for 'reviews' collection
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.buyerId == request.auth.uid;
+      allow update, delete: if isSignedIn() && (resource.data.buyerId == request.auth.uid || isAdmin());
+    }
+
+    // Rules for 'categories' collection
+    match /categories/{slug} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Rules for 'user_events' and 'search_events' collections
+    match /user_events/{eventId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if false; // System writes only
+    }
+
+    match /search_events/{eventId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if false; // System writes only
+    }
+
+    // Rules for 'recommendations' collection
+    match /recommendations/{recId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if false; // System writes only
+    }
+
+    // Rules for 'category_requests' collection
+    match /category_requests/{requestId} {
+      allow create: if isSignedIn() && request.resource.data.vendorId == request.auth.uid;
+      allow read: if isSignedIn() && (resource.data.vendorId == request.auth.uid || isAdmin());
+      allow update: if isAdmin(); // Admin approves/rejects
+      allow delete: if isAdmin();
+    }
+
+    // Rules for 'trust_scores' and 'trust_score_history' collections
+    match /trust_scores/{vendorId} {
+      allow read: if isSignedIn() && (vendorId == request.auth.uid || isAdmin());
+      allow write: if false; // Admin/System writes only
+    }
+
+    match /trust_score_history/{historyId} {
+      allow read: if isSignedIn() && (resource.data.vendorId == request.auth.uid || isAdmin());
+      allow write: if false; // Admin/System writes only
+    }
+
+    // Rules for 'vendor_trust_scores' and 'vendor_trust_history' collections (Phase 5)
+    match /vendor_trust_scores/{vendorId} {
+      allow read: if true; // Publicly readable by buyers to view vendor reliability
+      allow write: if false; // System writes only
+    }
+
+    match /vendor_trust_history/{historyId} {
+      allow read: if isSignedIn() && (resource.data.vendorId == request.auth.uid || isAdmin());
+      allow write: if false; // System writes only
+    }
+
+    // Rules for 'risk_scores', 'risk_score_history', and 'fraud_events' (Admin-only)
+    match /risk_scores/{vendorId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /risk_score_history/{historyId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /fraud_events/{eventId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Rules for 'fraud_audit_logs' and 'duplicate_products' (Admin-only)
+    match /fraud_audit_logs/{logId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /duplicate_products/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Rules for 'security_events' and 'device_signals'
+    match /security_events/{eventId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /device_signals/{signalId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if false; // System writes only
+    }
+
+    // Rules for 'ai_conversations' and 'ai_messages'
+    match /ai_conversations/{conversationId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if false; // System writes only
+    }
+
+    match /ai_messages/{messageId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if false; // System writes only
+    }
+
+    // Rules for 'image_enhancement_jobs'
+    match /image_enhancement_jobs/{jobId} {
+      allow create: if isSignedIn() && request.resource.data.vendorId == request.auth.uid;
+      allow read: if isSignedIn() && (resource.data.vendorId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
+    }
+
+    // Rules for 'admin_settings' collection
+    match /admin_settings/{settingId} {
+      // public contact settings are readable by anyone, other configs admin-only
+      allow read: if settingId == 'contact' || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ── Phase 2: Event Tracking & Recommendations ──────────────────────────
+
+    // user_events: users can only write their own events; reads are admin-only
+    match /user_events/{eventId} {
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAdmin();
+      allow update, delete: if false; // Immutable event log
+    }
+
+    // search_events: same as user_events
+    match /search_events/{eventId} {
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    // user_preferences: owner can read; only system (functions) can write
+    match /user_preferences/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if false; // Written exclusively by Cloud Functions
+    }
+
+    // recommendations: owner can read cached results; only system can write
+    match /recommendations/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if false; // Written exclusively by Cloud Functions
+
+      match /contexts/{context} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow write: if false;
+      }
+    }
+
+    // ── Buyer ↔ Vendor Real-Time Chat & Support Oversight ───────────────────
+    match /conversations/{conversationId} {
+      // Participants (buyer, vendor) and admins can read conversations
+      allow read: if isSignedIn() && (
+        resource.data.buyerId == request.auth.uid ||
+        resource.data.vendorId == request.auth.uid ||
+        isAdmin()
+      );
+
+      // Authenticated buyers or admins can create conversations
+      allow create: if isSignedIn() && (
+        request.resource.data.buyerId == request.auth.uid ||
+        isAdmin()
+      );
+
+      // Participants and admins can update metadata
+      allow update: if isSignedIn() && (
+        resource.data.buyerId == request.auth.uid ||
+        resource.data.vendorId == request.auth.uid ||
+        isAdmin()
+      );
+
+      allow delete: if isAdmin();
+
+      // Subcollection: messages
+      match /messages/{messageId} {
+        allow read: if isSignedIn() && (
+          get(/databases/$(database)/documents/conversations/$(conversationId)).data.buyerId == request.auth.uid ||
+          get(/databases/$(database)/documents/conversations/$(conversationId)).data.vendorId == request.auth.uid ||
+          isAdmin()
+        );
+
+        allow create: if isSignedIn() && (
+          request.resource.data.senderId == request.auth.uid ||
+          isAdmin()
+        );
+
+        allow update: if isSignedIn() && (
+          resource.data.senderId == request.auth.uid ||
+          isAdmin()
+        );
+
+        allow delete: if isAdmin();
+      }
+    }
+  }
+}

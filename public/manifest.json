@@ -1,0 +1,24 @@
+{
+  "name": "Vendora Premium Marketplace",
+  "short_name": "Vendora",
+  "description": "Pakistan's premium multi-vendor marketplace for small businesses and local artisans.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#059669",
+  "icons": [
+    {
+      "src": "https://placehold.co/192x192/059669/ffffff?text=V",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://placehold.co/512x512/059669/ffffff?text=V",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

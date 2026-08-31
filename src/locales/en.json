@@ -1,0 +1,72 @@
+{
+  "nav": {
+    "home": "Home",
+    "products": "Products",
+    "cart": "Cart",
+    "wishlist": "Wishlist",
+    "login": "Login",
+    "signup": "Sign Up",
+    "logout": "Logout",
+    "profile": "Profile",
+    "vendorDashboard": "Dashboard",
+    "adminDashboard": "Admin",
+    "orders": "My Orders",
+    "alerts": "Alerts",
+    "searchPlaceholder": "Search local products, handicrafts, clothing, & vendors...",
+    "topBanner": "Pakistan's Premium Multi-Vendor Marketplace for Small Businesses"
+  },
+  "home": {
+    "heroTitle": "Support Local Artisans & Small Businesses",
+    "heroSubtitle": "Discover high-quality, verified products directly from creators across Pakistan. Safe cash on delivery, easy returns, and authentic local craftsmanship.",
+    "shopNow": "Shop Now",
+    "registerVendor": "Register as Vendor",
+    "qualityGuaranteed": "100% Quality Guaranteed",
+    "qualitySubtitle": "Every merchant is verified by our admins prior to selling.",
+    "directFromMaker": "Direct from Maker",
+    "directSubtitle": "Zero middleman markups. Direct benefit to local businesses.",
+    "featuredTitle": "Featured Local Creations",
+    "featuredSubtitle": "Curated items representing the premium art and skill of Pakistani sellers",
+    "browseAll": "Browse All Products",
+    "merchantTitle": "Are you a merchant or artisan?",
+    "merchantSubtitle": "Register your business on Vendora to manage your inventory, handle customer orders, and unlock sales opportunities with nationwide shipping assistance.",
+    "joinVendor": "Join as Vendor Today"
+  },
+  "product": {
+    "addToCart": "Add to Cart",
+    "buyNow": "Buy Now",
+    "description": "Product Description",
+    "seller": "Seller",
+    "inStock": "In Stock",
+    "outOfStock": "Sold Out",
+    "similarProducts": "Similar Products",
+    "becauseYouViewed": "Because You Viewed",
+    "rating": "Rating",
+    "reviews": "Reviews"
+  },
+  "cart": {
+    "title": "Your Shopping Cart",
+    "empty": "Your cart is empty.",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping Cost",
+    "total": "Total",
+    "checkout": "Proceed to Checkout",
+    "remove": "Remove"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "shippingAddress": "Shipping Address",
+    "paymentMethod": "Payment Method",
+    "placeOrder": "Place Order",
+    "fullName": "Full Name",
+    "city": "City",
+    "cod": "Cash on Delivery",
+    "success": "Order placed successfully!"
+  },
+  "dashboard": {
+    "vendorTitle": "Vendor Console",
+    "adminTitle": "Admin Console",
+    "trustScore": "Trust Score",
+    "orders": "Orders",
+    "listings": "Active Listings"
+  }
+}

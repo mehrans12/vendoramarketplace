@@ -1,0 +1,33 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper: Check if user is signed in
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Helper: Check if file belongs to the user based on path vendorId
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Rules for vendor application documents (CNICs, credentials)
+    match /vendors/{vendorId}/{allPaths=**} {
+      // Only the vendor themselves or platform admins can read/write verification documents
+      allow read: if isOwner(vendorId) || firestore.get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow write: if isOwner(vendorId) &&
+        request.resource.size < 10 * 1024 * 1024 &&
+        (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');
+    }
+
+    // Rules for product images (validated file type and size)
+    match /products/{vendorId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(vendorId) &&
+        request.resource.size < 5 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/.*');
+    }
+  }
+}
