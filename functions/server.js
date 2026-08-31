@@ -48,19 +48,8 @@ const { generateRecommendations } = require('./recommendations/generate');
 const { handleCreateOrGetConversation, handleSendChatMessage, handleAdminManageChat } = require('./chat/index');
 
 // 1. AI Assistant Chat Endpoint
-app.post('/api/ai/chat', async (req, res) => {
-  try {
-    const { messages, userQuery, userId } = req.body || {};
-    const formattedMessages = messages || (userQuery ? [{ role: 'user', content: userQuery }] : []);
-    const response = await handleAssistantRequest({
-      messages: formattedMessages,
-      userId: userId || 'anonymous'
-    });
-    res.json({ success: true, ...response });
-  } catch (err) {
-    console.error('Chat endpoint error:', err);
-    res.status(500).json({ success: false, error: err.message });
-  }
+app.post('/api/ai/chat', (req, res) => {
+  return handleAssistantRequest(req, res);
 });
 
 // 2. AI Product Search Endpoint

@@ -278,7 +278,8 @@ export default function ChatWidget() {
           .concat(userMessage)
           .map(m => ({ role: m.role, content: m.content }));
 
-        const response = await fetch('/api/ai/chat', {
+        const baseUrl = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '');
+        const response = await fetch(`${baseUrl}/api/ai/chat`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
