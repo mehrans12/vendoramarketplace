@@ -216,28 +216,47 @@ app.get('/health', (req, res) => {
 // 2. Grounded AI Shopping Assistant Endpoint
 app.post('/api/ai/chat', async (req, res) => {
   try {
-    const { messages, mode, language = 'en' } = req.body || {};
+    const { messages, catalog: clientCatalog, mode, language = 'en' } = req.body || {};
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: "Invalid request: 'messages' array is required." });
     }
 
-    const lastUserMsg = messages[messages.length - 1]?.content || "";
-    const matchedProducts = searchCatalog(lastUserMsg);
+    // Use active website catalog if passed from client, merged with default catalog
+    const activeCatalog = (clientCatalog && Array.isArray(clientCatalog) && clientCatalog.length > 0)
+      ? clientCatalog
+      : VENDORA_CATALOG;
+
+    const lastUserMsg = (messages[messages.length - 1]?.content || "").trim();
+    const queryLower = lastUserMsg.toLowerCase();
+
+    // Find direct catalog matches
+    const directMatches = activeCatalog.filter(p => {
+      const pName = (p.name || p.title || '').toLowerCase();
+      const pCat = (p.category || '').toLowerCase();
+      const pDesc = (p.description || '').toLowerCase();
+      const words = queryLower.split(/\s+/).filter(w => w.length > 2);
+      return words.some(w => pName.includes(w) || pCat.includes(w) || pDesc.includes(w));
+    });
 
     // Build grounded catalog prompt
     const catalogPrompt = `
-CURRENT VERIFIED VENDORA PRODUCT CATALOG (ONLY USE THESE ITEMS):
-${VENDORA_CATALOG.map(p => `- ID: ${p.id} | Name: "${p.name}" | Category: ${p.category} | Price: Rs. ${p.price.toLocaleString()} | Vendor: ${p.vendor} | Stock: ${p.stock} | Link: [${p.name}](/product/${p.id}) | Description: ${p.description}`).join('\n')}
+YOU ARE VENDORA'S OFFICIAL AI SHOPPING ASSISTANT FOR VENDORA MARKETPLACE IN PAKISTAN.
 
-STRICT RULES:
-1. ONLY recommend and discuss products that exist in the Vendora catalog above. NEVER invent or recommend external products or brands not in Vendora.
-2. Whenever you mention or recommend any product, ALWAYS include its exact markdown link in the format [Product Name](/product/prod-id) and state its price in Rs.
-3. If the user asks for a product or category not available in Vendora, politely explain that Vendora does not carry that item, and recommend the closest available Vendora products.
-4. Support English, Urdu (اردو), Sindhi (سنڌي), and Roman Urdu/Sindhi automatically based on the user's language.
-5. Marketplace policies: Nationwide delivery takes 3-5 business days. Cash on Delivery (COD) and Online Payment are available. 7-day hassle-free return policy.
+LIST OF ALL AVAILABLE PRODUCTS ON VENDORA:
+${activeCatalog.map(p => `• ID: "${p.id}" | Name: "${p.name || p.title}" | Category: "${p.category}" | Price: Rs. ${(p.price || 0).toLocaleString()} | Stock: ${p.stock || 10} | Link: [${p.name || p.title}](/product/${p.id})`).join('\n')}
+
+STRICT DIRECTIVES (FAILURE TO FOLLOW IS A CRITICAL ERROR):
+1. YOU MUST NEVER RECOMMEND, MENTION, OR INVENT ANY PRODUCT THAT IS NOT IN THE LIST ABOVE.
+2. If the user asks for ANY item that is not in the list above (for example: smartwatch, headphone, phone, laptop, television, external brands, etc.):
+   - YOU MUST EXPLICITLY TELL THE USER: "We currently do not have [item] available on Vendora."
+   - DO NOT make up fake specs, external stores, or non-existent items.
+   - Then suggest 2-3 genuine items from the Vendora product list above that they might like instead.
+3. When recommending any product from the list, ALWAYS provide its exact markdown link in the format [Product Name](/product/prod-id) and price in Rs.
+4. Support English, Urdu (اردو), Sindhi (سنڌي), and Roman Urdu/Sindhi automatically based on user language.
+5. Delivery across Pakistan takes 3-5 business days with Cash on Delivery (COD) and 7-day hassle-free return guarantee.
 `;
 
-    const langHint = `Target reply language: ${language === 'ur' ? 'Urdu' : language === 'sd' ? 'Sindhi' : 'English'}. If the user writes in Roman Urdu/Sindhi, reply in that style.`;
+    const langHint = `Target reply language: ${language === 'ur' ? 'Urdu' : language === 'sd' ? 'Sindhi' : 'English'}. If the user writes in Roman Urdu/Sindhi, reply in that language style.`;
 
     const formattedMessages = [
       { role: 'system', content: catalogPrompt },
@@ -259,7 +278,7 @@ STRICT RULES:
           body: JSON.stringify({
             model: "gemini-3.6-flash",
             messages: formattedMessages,
-            temperature: 0.2,
+            temperature: 0.1,
             max_tokens: 600
           })
         });
@@ -278,39 +297,37 @@ STRICT RULES:
 
     // Determine relevant products for UI cards
     if (replyContent) {
-      // Find which products were mentioned in the reply
-      returnedProducts = VENDORA_CATALOG.filter(p => {
-        return replyContent.includes(p.id) || 
-               replyContent.toLowerCase().includes(p.name.toLowerCase()) ||
-               lastUserMsg.toLowerCase().includes(p.category.toLowerCase());
+      returnedProducts = activeCatalog.filter(p => {
+        const pId = p.id || p.productId;
+        const pName = (p.name || p.title || '').toLowerCase();
+        return replyContent.includes(pId) || replyContent.toLowerCase().includes(pName);
       });
-      if (returnedProducts.length === 0 && matchedProducts.length > 0) {
-        returnedProducts = matchedProducts.slice(0, 3);
+      if (returnedProducts.length === 0 && directMatches.length > 0) {
+        returnedProducts = directMatches.slice(0, 3);
       }
     } else {
-      // Fallback deterministic response
-      if (matchedProducts.length > 0) {
-        const listStr = matchedProducts
-          .slice(0, 4)
-          .map(p => `* [**${p.name}**](/product/${p.id}) - **Rs. ${p.price.toLocaleString()}** (By ${p.vendor})`)
+      if (directMatches.length > 0) {
+        const listStr = directMatches
+          .slice(0, 3)
+          .map(p => `* [**${p.name || p.title}**](/product/${p.id}) - **Rs. ${(p.price || 0).toLocaleString()}**`)
           .join('\n');
-        replyContent = `Here are available items matching your request in the Vendora marketplace:\n\n${listStr}\n\nClick on any product above to see complete details and order with Cash on Delivery! 🛍️`;
-        returnedProducts = matchedProducts.slice(0, 4);
+        replyContent = `Here are available items matching your search on Vendora:\n\n${listStr}\n\nClick on any product above to view full details! 🛍️`;
+        returnedProducts = directMatches.slice(0, 3);
       } else {
-        replyContent = `Welcome to Vendora! We offer verified local Pakistani handicrafts, fashion, spices, and decor. What items would you like to explore today? 🛍️`;
+        replyContent = `Welcome to Vendora! We specialize in authentic Pakistani handicrafts, traditional fashion, jewelry, home decor, and spices. How can I help you today? 🛍️`;
       }
     }
 
     // Format returned products for frontend cards
     const formattedProducts = returnedProducts.map(p => ({
-      id: p.id,
-      name: p.name,
+      id: p.id || p.productId,
+      name: p.name || p.title,
       price: p.price,
-      images: [p.image],
-      rating: p.rating,
+      images: p.images || [p.image || 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=400&q=80'],
+      rating: p.rating || 4.8,
       reviews: 15,
-      vendor: p.vendor,
-      stock: p.stock
+      vendor: p.vendorName || p.vendor || 'Artisan Merchant',
+      stock: p.stock || 10
     }));
 
     return res.json({

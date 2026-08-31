@@ -7,6 +7,7 @@ import { MessageSquare, X, Send, Sparkles, HelpCircle, Loader, Sliders } from 'l
 import { trackEvent } from '../services/analytics/eventTracker';
 import { EventTypes } from '../services/analytics/eventTypes';
 import { useLanguage } from '../context/LanguageContext';
+import { getMarketplaceProducts } from '../utils/productSync';
 
 // Helper inline markdown parser (bold, links, etc.)
 function parseInlineMarkdown(text) {
@@ -278,6 +279,18 @@ export default function ChatWidget() {
           .concat(userMessage)
           .map(m => ({ role: m.role, content: m.content }));
 
+        const currentCatalog = await getMarketplaceProducts().catch(() => []);
+        const catalogPayload = currentCatalog.map(p => ({
+          id: p.id || p.productId,
+          name: typeof p.title === 'object' ? (p.title.en || Object.values(p.title)[0]) : (p.title || p.name),
+          category: p.category,
+          price: p.price,
+          vendor: p.vendorName || p.vendor || 'Artisan Merchant',
+          stock: p.stock || 10,
+          image: p.images?.[0] || p.image || '',
+          description: typeof p.description === 'object' ? (p.description.en || Object.values(p.description)[0]) : (p.description || '')
+        }));
+
         const baseUrl = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '');
         const response = await fetch(`${baseUrl}/api/ai/chat`, {
           method: 'POST',
@@ -287,6 +300,7 @@ export default function ChatWidget() {
           },
           body: JSON.stringify({
             messages: historyPayload,
+            catalog: catalogPayload,
             mode,
             language
           })
